@@ -1,300 +1,300 @@
 # Blender Conveyor Belt Simulation
 
-Symulacja taśmy produkcyjnej w Blenderze 5.0 z automatycznym renderowaniem obrazów przy każdej pozycji ruchu taśmy.
+Production conveyor belt simulation in Blender 5.0 with automatic image rendering at each belt movement position.
 
-## Specyfikacja
+## Specification
 
-- **Taśma**: 2m x 0.6m x 0.02m
-- **Boxy**: 0.1m x 0.1m x 0.1m, losowo rozmieszczone, różne kolory
-- **Kamera**: Wysokość 1.5m, 640x480px, pokrywa całą szerokość taśmy
-- **Oświetlenie**: Listwa pod kątem 45° nad taśmą
-- **Ruch**: Skoki co 0.02m (100 pozycji na całej długości)
-- **Render**: Jeden obraz na każdą pozycję taśmy
+- **Conveyor Belt**: 2m x 0.6m x 0.02m
+- **Boxes**: 0.1m x 0.1m x 0.1m, randomly placed, different colors
+- **Camera**: Height 1.5m, 640x480px, covers full belt width
+- **Lighting**: Strip light at 45° angle above belt
+- **Movement**: Steps of 0.02m (100 positions across full length)
+- **Rendering**: One image per belt position
 
-## Struktura Projektu
+## Project Structure
 
 ```
 Blender_conveyer/
 ├── scripts/
-│   ├── main.py              # Główny skrypt uruchamiający symulację
-│   ├── scene_setup.py       # Tworzenie taśmy i boxów
-│   ├── camera_config.py     # Konfiguracja kamery i renderowania
-│   ├── lighting_setup.py    # Oświetlenie sceny
-│   └── render_manager.py    # System renderowania sekwencji
+│   ├── main.py              # Main script launching simulation
+│   ├── scene_setup.py       # Conveyor belt and box creation
+│   ├── camera_config.py     # Camera and rendering configuration
+│   ├── lighting_setup.py    # Scene lighting
+│   └── render_manager.py    # Sequence rendering system
 ├── config/
-│   └── conveyor_config.json # Konfiguracja parametrów
-├── renders/                 # Wygenerowane obrazy (tworzone automatycznie)
+│   └── conveyor_config.json # Parameter configuration
+├── renders/                 # Generated images (created automatically)
 └── README.md
 ```
 
-## Instalacja i Uruchomienie
+## Installation and Usage
 
-### Wymagania
-- Blender 5.0 lub nowszy
-- Python 3.11+ (wbudowany w Blendera)
+### Requirements
+- Blender 5.0 or newer
+- Python 3.11+ (built into Blender)
 
-### Metoda 1: Tryb tekstowy (Headless)
+### Method 1: Headless Mode
 
-Renderowanie w tle bez GUI:
+Background rendering without GUI:
 
 ```bash
 blender --background --python scripts/main.py
 ```
 
-### Metoda 2: W Blenderze (GUI) - NAJPROSTSZA
+### Method 2: In Blender GUI - EASIEST
 
-**Sposób A: Używając pomocniczego skryptu (zalecane)**
+**Method A: Using helper script (recommended)**
 
-1. Otwórz Blender 5.0
-2. Przejdź do zakładki **Scripting**
-3. Otwórz plik `scripts/run_in_blender.py` (Text → Open)
-4. **WAŻNE**: Upewnij się, że ścieżka `PROJECT_DIR` w linii 12 jest poprawna
-5. Kliknij **Run Script** (▶) lub naciśnij `Alt+P`
+1. Open Blender 5.0
+2. Go to **Scripting** tab
+3. Open file `scripts/run_in_blender.py` (Text → Open)
+4. **IMPORTANT**: Make sure the `PROJECT_DIR` path on line 12 is correct
+5. Click **Run Script** (▶) or press `Alt+P`
 
-**Sposób B: Bezpośrednie uruchomienie main.py**
+**Method B: Direct main.py execution**
 
-1. Najpierw zapisz pusty plik .blend w głównym folderze projektu: `File → Save As → Conveyer_v1.blend`
-2. Przejdź do zakładki **Scripting**
-3. Otwórz plik `scripts/main.py` (Text → Open)
-4. Kliknij **Run Script** lub naciśnij `Alt+P`
+1. First save an empty .blend file in the main project folder: `File → Save As → Conveyer_v1.blend`
+2. Go to **Scripting** tab
+3. Open file `scripts/main.py` (Text → Open)
+4. Click **Run Script** or press `Alt+P`
 
-### Metoda 3: Import i uruchomienie w konsoli Pythona
+### Method 3: Import and run in Python console
 
-W konsoli Blendera (Scripting → Python Console):
+In Blender console (Scripting → Python Console):
 
 ```python
 import sys
 sys.path.insert(0, r"D:\Github\Blender_conveyer\scripts")
 
 import main
-main.main(render=False)  # render=False = tylko setup bez renderowania
+main.main(render=False)  # render=False = setup only without rendering
 ```
 
-## Konfiguracja
+## Configuration
 
-Edytuj plik `config/conveyor_config.json` aby dostosować parametry:
+Edit `config/conveyor_config.json` file to adjust parameters:
 
-### Taśma
+### Conveyor Belt
 ```json
 "conveyor": {
-  "length": 2.0,        // Długość taśmy (m)
-  "width": 0.6,         // Szerokość taśmy (m)
-  "thickness": 0.02,    // Grubość taśmy (m)
-  "step_size": 0.02     // Wielkość kroku ruchu (m)
+  "length": 2.0,        // Belt length (m)
+  "width": 0.6,         // Belt width (m)
+  "thickness": 0.02,    // Belt thickness (m)
+  "step_size": 0.02     // Movement step size (m)
 }
 ```
 
-### Boxy
+### Boxes
 ```json
 "boxes": {
-  "size": 0.1,              // Rozmiar kostki (m)
-  "min_count": 5,           // Minimalna liczba boxów
-  "max_count": 15,          // Maksymalna liczba boxów
-  "z_layer_offset": 0.0001, // Offset wysokości między boxami (m) - zapobiega artefaktom
-  "random_seed": null,      // Seed dla losowości (null = losowy)
-  "random_colors": true     // Czy używać różnych kolorów
+  "size": 0.1,              // Cube size (m)
+  "min_count": 5,           // Minimum number of boxes
+  "max_count": 15,          // Maximum number of boxes
+  "z_layer_offset": 0.0001, // Height offset between boxes (m) - prevents artifacts
+  "random_seed": null,      // Randomness seed (null = random)
+  "random_colors": true     // Use different colors
 }
 ```
 
-**Uwaga o nakładaniu boxów:** Boxy mogą się nakładać losowo. Każdy kolejny box jest umieszczany
-minimalnie wyżej (o `z_layer_offset`), dzięki czemu w miejscu przecięcia nowszy box przykrywa
-starszy. To zapobiega artefaktom renderowania ("czarnym dziurom") przy nakładaniu się obiektów.
+**Note about box overlap:** Boxes can overlap randomly. Each subsequent box is placed
+minimally higher (by `z_layer_offset`), so at intersection points newer boxes cover
+older ones. This prevents rendering artifacts ("black holes") when objects overlap.
 
-### Kamera
+### Camera
 ```json
 "camera": {
-  "height": 1.5,        // Wysokość kamery nad taśmą (m)
-  "resolution_x": 640,  // Szerokość obrazu (px)
-  "resolution_y": 480   // Wysokość obrazu (px)
+  "height": 1.5,        // Camera height above belt (m)
+  "resolution_x": 640,  // Image width (px)
+  "resolution_y": 480   // Image height (px)
 }
 ```
 
-### Oświetlenie
+### Lighting
 ```json
 "lighting": {
-  "type": "area",                // Typ światła
-  "angle_degrees": 45,           // Kąt nachylenia (stopnie)
-  "distance_from_conveyor": 1.0, // Odległość od taśmy (m)
-  "strength": 100,               // Moc światła (W)
-  "size": 2.0,                   // Rozmiar listwy (m)
-  "use_fill_light": false        // Dodatkowe światło wypełniające
+  "type": "area",                // Light type
+  "angle_degrees": 45,           // Tilt angle (degrees)
+  "distance_from_conveyor": 1.0, // Distance from belt (m)
+  "strength": 100,               // Light power (W)
+  "size": 2.0,                   // Strip size (m)
+  "use_fill_light": false        // Additional fill light
 }
 ```
 
-**Uwaga o `use_fill_light`:**
-- `false` (domyślnie) - **Zalecane dla symulacji przemysłowej**
-  - Tylko jedno główne światło pod kątem 45°
-  - Realistyczne cienie i kontrasty
-  - Symulacja rzeczywistych warunków systemu wizyjnego
-- `true` - Dodaje słabsze światło z przeciwnej strony
-  - Łagodniejsze cienie
-  - Lepiej dla wizualizacji/prezentacji
-  - **NIE zalecane dla testowania algorytmów wizyjnych**
+**Note about `use_fill_light`:**
+- `false` (default) - **Recommended for industrial simulation**
+  - Only one main light at 45° angle
+  - Realistic shadows and contrast
+  - Simulates real machine vision conditions
+- `true` - Adds weaker light from opposite side
+  - Softer shadows
+  - Better for visualization/presentation
+  - **NOT recommended for testing vision algorithms**
 
-### Renderowanie
+### Rendering
 ```json
 "render": {
-  "output_folder": "renders",  // Folder wyjściowy
+  "output_folder": "renders",  // Output folder
   "file_format": "PNG",        // Format (PNG, JPEG, etc.)
-  "engine": "CYCLES",          // Silnik (CYCLES lub EEVEE)
-  "samples": 64,               // Liczba próbek (jakość)
-  "use_denoising": true        // Czy używać denoising
+  "engine": "CYCLES",          // Engine (CYCLES or EEVEE)
+  "samples": 64,               // Number of samples (quality)
+  "use_denoising": true        // Use denoising
 }
 ```
 
-## Opcje Uruchamiania
+## Usage Options
 
-### Tylko setup bez renderowania
+### Setup only without rendering
 ```bash
 blender --background --python scripts/main.py -- --no-render
 ```
 
-### Z podglądem animacji (wymaga GUI)
+### With animation preview (requires GUI)
 ```python
 import main
 main.main(render=False, preview=True)
 ```
 
-## Wyjście
+## Output
 
-Renderowane obrazy są zapisywane w folderze `renders/` jako:
-- `frame_0001.png` - pierwsza pozycja taśmy
-- `frame_0002.png` - druga pozycja
+Rendered images are saved in `renders/` folder as:
+- `frame_0001.png` - first belt position
+- `frame_0002.png` - second position
 - ...
-- `frame_0100.png` - ostatnia pozycja
+- `frame_0100.png` - last position
 
-Każdy obraz to widok z kamery na aktualny fragment taśmy z boxami.
+Each image is a camera view of the current belt section with boxes.
 
-## Jak działa nakładanie boxów?
+## How Box Overlap Works
 
-System pozwala na losowe nakładanie się boxów, co jest bardziej realistyczne dla symulacji
-taśmy produkcyjnej. Aby zapobiec artefaktom renderowania (Z-fighting, "czarne dziury"),
-każdy kolejny box jest umieszczany minimalnie wyżej:
+The system allows random box overlap, which is more realistic for production
+conveyor simulation. To prevent rendering artifacts (Z-fighting, "black holes"),
+each subsequent box is placed minimally higher:
 
-- Box #0: wysokość = base_z
-- Box #1: wysokość = base_z + 0.0001m
-- Box #2: wysokość = base_z + 0.0002m
-- itd.
+- Box #0: height = base_z
+- Box #1: height = base_z + 0.0001m
+- Box #2: height = base_z + 0.0002m
+- etc.
 
-Różnica jest mikroskopyjna (0.1mm), więc wizualnie wszystkie boxy wydają się na tym samym
-poziomie, ale silnik renderowania wie, który jest "na wierzchu" w miejscu przecięcia.
+The difference is microscopic (0.1mm), so visually all boxes appear at the same
+level, but the rendering engine knows which is "on top" at intersection points.
 
-**Zalety tego podejścia:**
-- ✅ Brak "czarnych dziur" przy nakładaniu
-- ✅ Bardziej realistyczna symulacja (rzeczywiste obiekty też mogą się nakładać)
-- ✅ Wszystkie boxy zawsze mogą być umieszczone (brak ograniczeń przestrzennych)
-- ✅ Prostsza implementacja i szybsze wykonanie
+**Advantages of this approach:**
+- ✅ No "black holes" when overlapping
+- ✅ More realistic simulation (real objects can overlap too)
+- ✅ All boxes can always be placed (no space constraints)
+- ✅ Simpler implementation and faster execution
 
-## Dostosowywanie
+## Customization
 
-### Zmiana liczby boxów
-W `config/conveyor_config.json` ustaw:
+### Change number of boxes
+In `config/conveyor_config.json` set:
 ```json
 "min_count": 10,
 "max_count": 20
 ```
 
-### Zmiana jakości renderowania
+### Change rendering quality
 ```json
-"samples": 128,           // Więcej próbek = lepsza jakość, dłuższy czas
+"samples": 128,           // More samples = better quality, longer time
 "use_denoising": true
 ```
 
-### Zmiana silnika renderowania
+### Change rendering engine
 ```json
-"engine": "EEVEE"         // Szybszy, ale mniej fotorealistyczny
+"engine": "EEVEE"         // Faster but less photorealistic
 ```
 
-### Powtarzalne rozmieszczenie boxów
+### Repeatable box placement
 ```json
-"random_seed": 42         // Ta sama liczba = te same pozycje boxów
+"random_seed": 42         // Same number = same box positions
 ```
 
-### Włączenie światła wypełniającego (NIE dla symulacji przemysłowej!)
+### Enable fill light (NOT for industrial simulation!)
 ```json
-"use_fill_light": true    // Dodaje dodatkowe światło (tylko do wizualizacji)
+"use_fill_light": true    // Adds additional light (visualization only)
 ```
-**Uwaga:** Pozostaw `false` jeśli testujesz algorytmy wizyjne - chcesz realistycznych warunków!
+**Warning:** Keep `false` if testing vision algorithms - you want realistic conditions!
 
-## Struktura Animacji
+## Animation Structure
 
-- **Frame 1**: Taśma na pozycji 0m (początek)
-- **Frame 2**: Taśma przesunięta o 0.02m
-- **Frame 3**: Taśma przesunięta o 0.04m
+- **Frame 1**: Belt at position 0m (start)
+- **Frame 2**: Belt moved by 0.02m
+- **Frame 3**: Belt moved by 0.04m
 - ...
-- **Frame 100**: Taśma przesunięta o 1.98m (koniec)
+- **Frame 100**: Belt moved by 1.98m (end)
 
-Każda klatka = jedna pozycja renderowania.
+Each frame = one rendering position.
 
 ## Troubleshooting
 
-### Błąd "No module named 'scene_setup'" lub podobne
-Ten błąd występuje gdy Blender nie może znaleźć modułów projektu. Rozwiązania:
+### Error "No module named 'scene_setup'" or similar
+This error occurs when Blender cannot find project modules. Solutions:
 
-**Rozwiązanie 1 (najlepsze):** Użyj skryptu `run_in_blender.py`:
-- Otwórz plik `scripts/run_in_blender.py` w Text Editorze Blendera
-- Upewnij się, że ścieżka `PROJECT_DIR` w linii 12 wskazuje na Twój katalog projektu
-- Uruchom skrypt (Alt+P)
+**Solution 1 (best):** Use the `run_in_blender.py` script:
+- Open file `scripts/run_in_blender.py` in Blender's Text Editor
+- Make sure the `PROJECT_DIR` path on line 12 points to your project directory
+- Run the script (Alt+P)
 
-**Rozwiązanie 2:** Zapisz plik .blend w głównym folderze projektu:
-- File → Save As → `Conveyer_v1.blend` (w folderze `D:\Github\Blender_conveyer\`)
-- Następnie uruchom `main.py` z Text Editora
+**Solution 2:** Save .blend file in main project folder:
+- File → Save As → `Conveyer_v1.blend` (in folder `D:\Github\Blender_conveyer\`)
+- Then run `main.py` from Text Editor
 
-**Rozwiązanie 3:** Ręczne ustawienie ścieżki w konsoli:
+**Solution 3:** Manual path setting in console:
 ```python
 import sys
-sys.path.insert(0, r"D:\Github\Blender_conveyer\scripts")  # Zmień na swoją ścieżkę!
+sys.path.insert(0, r"D:\Github\Blender_conveyer\scripts")  # Change to your path!
 ```
-Następnie uruchom skrypt.
+Then run the script.
 
-### GPU nie jest używane
-W `camera_config.py:66-68` zmień `CUDA` na `OPENCL` lub `METAL` w zależności od karty graficznej.
+### GPU not being used
+In `camera_config.py:66-68` change `CUDA` to `OPENCL` or `METAL` depending on your graphics card.
 
-### Zbyt długi czas renderowania
-- Zmniejsz `samples` w konfiguracji (np. do 32)
-- Użyj silnika `EEVEE` zamiast `CYCLES`
-- Zmniejsz rozdzielczość kamery
+### Rendering takes too long
+- Decrease `samples` in config (e.g. to 32)
+- Use `EEVEE` engine instead of `CYCLES`
+- Decrease camera resolution
 
-### Boxy nakładają się i powstają artefakty ("czarna dziura")
-**Problem został naprawiony!** System używa warstwowania Z - każdy kolejny box jest umieszczany
-minimalnie wyżej, więc w miejscu nakładania nowszy box jest widoczny na wierzchu.
+### Boxes overlap and cause artifacts ("black hole")
+**Problem fixed!** The system uses Z-layering - each subsequent box is placed
+minimally higher, so at overlap points the newer box is visible on top.
 
-Jeśli nadal widzisz artefakty, zwiększ offset wysokości w `config/conveyor_config.json`:
+If you still see artifacts, increase height offset in `config/conveyor_config.json`:
 ```json
-"z_layer_offset": 0.0002  // Zwiększ jeśli wciąż są problemy (domyślnie 0.0001m)
+"z_layer_offset": 0.0002  // Increase if problems persist (default 0.0001m)
 ```
 
-### Za dużo/za mało boxów na taśmie
-Dostosuj w konfiguracji:
+### Too many/too few boxes on belt
+Adjust in configuration:
 ```json
 "min_count": 10,  // Minimum
 "max_count": 20   // Maximum
 ```
 
-### Boxy wypadają poza taśmę
-System automatycznie oblicza bezpieczne granice. Jeśli problem występuje, sprawdź rozmiary w konfiguracji.
+### Boxes fall off the belt
+System automatically calculates safe boundaries. If problem occurs, check sizes in configuration.
 
-## Przydatne Polecenia
+## Useful Commands
 
-### Sprawdzenie wersji Blendera
+### Check Blender version
 ```bash
 blender --version
 ```
 
-### Renderowanie tylko jednej klatki (test)
-W konsoli Blendera:
+### Render only one frame (test)
+In Blender console:
 ```python
 import render_manager
 render_manager.render_single_position(config, position_index=0)
 ```
 
-### Export sceny do .blend
-Po uruchomieniu skryptu:
+### Export scene to .blend
+After running the script:
 ```python
 import bpy
 bpy.ops.wm.save_as_mainfile(filepath="D:/Github/Blender_conveyer/conveyor_scene.blend")
 ```
 
-## Licencja
+## License
 
-Projekt open-source do użytku edukacyjnego i komercyjnego.
+Open-source project for educational and commercial use.
