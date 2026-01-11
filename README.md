@@ -87,13 +87,18 @@ Edytuj plik `config/conveyor_config.json` aby dostosować parametry:
 ### Boxy
 ```json
 "boxes": {
-  "size": 0.1,          // Rozmiar kostki (m)
-  "min_count": 5,       // Minimalna liczba boxów
-  "max_count": 15,      // Maksymalna liczba boxów
-  "random_seed": null,  // Seed dla losowości (null = losowy)
-  "random_colors": true // Czy używać różnych kolorów
+  "size": 0.1,              // Rozmiar kostki (m)
+  "min_count": 5,           // Minimalna liczba boxów
+  "max_count": 15,          // Maksymalna liczba boxów
+  "z_layer_offset": 0.0001, // Offset wysokości między boxami (m) - zapobiega artefaktom
+  "random_seed": null,      // Seed dla losowości (null = losowy)
+  "random_colors": true     // Czy używać różnych kolorów
 }
 ```
+
+**Uwaga o nakładaniu boxów:** Boxy mogą się nakładać losowo. Każdy kolejny box jest umieszczany
+minimalnie wyżej (o `z_layer_offset`), dzięki czemu w miejscu przecięcia nowszy box przykrywa
+starszy. To zapobiega artefaktom renderowania ("czarnym dziurom") przy nakładaniu się obiektów.
 
 ### Kamera
 ```json
@@ -103,6 +108,28 @@ Edytuj plik `config/conveyor_config.json` aby dostosować parametry:
   "resolution_y": 480   // Wysokość obrazu (px)
 }
 ```
+
+### Oświetlenie
+```json
+"lighting": {
+  "type": "area",                // Typ światła
+  "angle_degrees": 45,           // Kąt nachylenia (stopnie)
+  "distance_from_conveyor": 1.0, // Odległość od taśmy (m)
+  "strength": 100,               // Moc światła (W)
+  "size": 2.0,                   // Rozmiar listwy (m)
+  "use_fill_light": false        // Dodatkowe światło wypełniające
+}
+```
+
+**Uwaga o `use_fill_light`:**
+- `false` (domyślnie) - **Zalecane dla symulacji przemysłowej**
+  - Tylko jedno główne światło pod kątem 45°
+  - Realistyczne cienie i kontrasty
+  - Symulacja rzeczywistych warunków systemu wizyjnego
+- `true` - Dodaje słabsze światło z przeciwnej strony
+  - Łagodniejsze cienie
+  - Lepiej dla wizualizacji/prezentacji
+  - **NIE zalecane dla testowania algorytmów wizyjnych**
 
 ### Renderowanie
 ```json
@@ -138,6 +165,26 @@ Renderowane obrazy są zapisywane w folderze `renders/` jako:
 
 Każdy obraz to widok z kamery na aktualny fragment taśmy z boxami.
 
+## Jak działa nakładanie boxów?
+
+System pozwala na losowe nakładanie się boxów, co jest bardziej realistyczne dla symulacji
+taśmy produkcyjnej. Aby zapobiec artefaktom renderowania (Z-fighting, "czarne dziury"),
+każdy kolejny box jest umieszczany minimalnie wyżej:
+
+- Box #0: wysokość = base_z
+- Box #1: wysokość = base_z + 0.0001m
+- Box #2: wysokość = base_z + 0.0002m
+- itd.
+
+Różnica jest mikroskopyjna (0.1mm), więc wizualnie wszystkie boxy wydają się na tym samym
+poziomie, ale silnik renderowania wie, który jest "na wierzchu" w miejscu przecięcia.
+
+**Zalety tego podejścia:**
+- ✅ Brak "czarnych dziur" przy nakładaniu
+- ✅ Bardziej realistyczna symulacja (rzeczywiste obiekty też mogą się nakładać)
+- ✅ Wszystkie boxy zawsze mogą być umieszczone (brak ograniczeń przestrzennych)
+- ✅ Prostsza implementacja i szybsze wykonanie
+
 ## Dostosowywanie
 
 ### Zmiana liczby boxów
@@ -162,6 +209,12 @@ W `config/conveyor_config.json` ustaw:
 ```json
 "random_seed": 42         // Ta sama liczba = te same pozycje boxów
 ```
+
+### Włączenie światła wypełniającego (NIE dla symulacji przemysłowej!)
+```json
+"use_fill_light": true    // Dodaje dodatkowe światło (tylko do wizualizacji)
+```
+**Uwaga:** Pozostaw `false` jeśli testujesz algorytmy wizyjne - chcesz realistycznych warunków!
 
 ## Struktura Animacji
 
@@ -202,12 +255,24 @@ W `camera_config.py:66-68` zmień `CUDA` na `OPENCL` lub `METAL` w zależności 
 - Użyj silnika `EEVEE` zamiast `CYCLES`
 - Zmniejsz rozdzielczość kamery
 
-### Boxy wypadają poza taśmę
-Zwiększ margines w `scene_setup.py:74-75` zmieniając:
-```python
-x_min = -length / 2 + box_size  # Większy margines
-x_max = length / 2 - box_size
+### Boxy nakładają się i powstają artefakty ("czarna dziura")
+**Problem został naprawiony!** System używa warstwowania Z - każdy kolejny box jest umieszczany
+minimalnie wyżej, więc w miejscu nakładania nowszy box jest widoczny na wierzchu.
+
+Jeśli nadal widzisz artefakty, zwiększ offset wysokości w `config/conveyor_config.json`:
+```json
+"z_layer_offset": 0.0002  // Zwiększ jeśli wciąż są problemy (domyślnie 0.0001m)
 ```
+
+### Za dużo/za mało boxów na taśmie
+Dostosuj w konfiguracji:
+```json
+"min_count": 10,  // Minimum
+"max_count": 20   // Maximum
+```
+
+### Boxy wypadają poza taśmę
+System automatycznie oblicza bezpieczne granice. Jeśli problem występuje, sprawdź rozmiary w konfiguracji.
 
 ## Przydatne Polecenia
 

@@ -85,7 +85,11 @@ def generate_random_color():
 
 
 def create_boxes_on_conveyor(config, conveyor):
-    """Create randomly positioned boxes on the conveyor belt"""
+    """Create randomly positioned boxes on the conveyor belt
+
+    Boxes can overlap - later boxes will appear on top of earlier ones
+    to prevent rendering artifacts (black holes)
+    """
     conv_config = config['conveyor']
     box_config = config['boxes']
 
@@ -109,12 +113,19 @@ def create_boxes_on_conveyor(config, conveyor):
     x_max = length / 2 - box_size / 2
     y_min = -width / 2 + box_size / 2
     y_max = width / 2 - box_size / 2
-    z_position = thickness / 2 + box_size / 2  # On top of conveyor
+    base_z_position = thickness / 2 + box_size / 2  # On top of conveyor
+
+    # Z-offset for each box - later boxes slightly higher
+    # This ensures that overlapping boxes render correctly
+    z_offset_per_box = box_config.get('z_layer_offset', 0.0001)  # 0.1mm per box
 
     for i in range(num_boxes):
         # Random position on conveyor
         x = random.uniform(x_min, x_max)
         y = random.uniform(y_min, y_max)
+
+        # Each subsequent box is slightly higher to prevent Z-fighting
+        z_position = base_z_position + (i * z_offset_per_box)
         position = (x, y, z_position)
 
         # Generate color
@@ -130,6 +141,8 @@ def create_boxes_on_conveyor(config, conveyor):
         box.parent = conveyor
 
     print(f"Created {num_boxes} boxes on conveyor")
+    print(f"  Boxes can overlap - later boxes appear on top")
+
     return boxes
 
 

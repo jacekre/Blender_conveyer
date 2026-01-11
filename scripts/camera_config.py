@@ -22,9 +22,6 @@ def setup_camera(config):
     camera = bpy.context.active_object
     camera.name = "Conveyor_Camera"
 
-    # Point camera straight down at conveyor center
-    camera.rotation_euler = (0, 0, 0)  # Will be set by constraint
-
     # Set as active camera
     bpy.context.scene.camera = camera
 
@@ -38,30 +35,36 @@ def setup_camera(config):
 
     constraint.target = target
     constraint.track_axis = 'TRACK_NEGATIVE_Z'
-    constraint.up_axis = 'UP_Y'
+    constraint.up_axis = 'UP_X'  # Changed from UP_Y to rotate camera 90° around Z axis
 
     # Calculate camera FOV
-    # We want the camera to see the full width of the conveyor
-    # At height h, to see width w: FOV = 2 * atan(w / (2 * h))
+    # IMPORTANT: Camera is rotated 90°, so dimensions are swapped:
+    # - 480px (vertical) now covers conveyor WIDTH (0.6m in X axis)
+    # - 640px (horizontal) now covers conveyor LENGTH (in Y axis, direction of movement)
 
     distance_to_target = height - look_at_height
-    horizontal_fov = 2 * math.atan(conveyor_width / (2 * distance_to_target))
+    aspect_ratio = res_x / res_y  # 640/480 = 4/3
 
-    # Blender uses vertical FOV, convert from horizontal
-    aspect_ratio = res_x / res_y
-    vertical_fov = 2 * math.atan(math.tan(horizontal_fov / 2) / aspect_ratio)
+    # After 90° rotation, vertical FOV should cover the conveyor width
+    vertical_fov = 2 * math.atan(conveyor_width / (2 * distance_to_target))
 
-    # Set camera properties
+    # Horizontal FOV is larger (aspect ratio 4/3)
+    horizontal_fov = 2 * math.atan(math.tan(vertical_fov / 2) * aspect_ratio)
+
+    # Set camera properties (Blender uses vertical FOV)
     camera.data.lens_unit = 'FOV'
     camera.data.angle = vertical_fov
 
-    # Calculate the viewing area dimensions
-    view_width = conveyor_width
-    view_height = view_width / aspect_ratio
+    # Calculate the viewing area dimensions (after 90° rotation)
+    view_height = conveyor_width  # Vertical dimension (480px) covers width (X axis)
+    view_width = view_height * aspect_ratio  # Horizontal dimension (640px) covers length (Y axis)
 
     print(f"Camera setup:")
     print(f"  Position: (0, 0, {height}m)")
-    print(f"  Viewing area: {view_width:.3f}m x {view_height:.3f}m")
+    print(f"  Rotation: 90° around Z axis (up_axis = X)")
+    print(f"  Viewing area (after rotation):")
+    print(f"    Width (X axis, 480px): {view_height:.3f}m - COVERS FULL CONVEYOR WIDTH")
+    print(f"    Length (Y axis, 640px): {view_width:.3f}m - movement direction")
     print(f"  Horizontal FOV: {math.degrees(horizontal_fov):.2f}°")
     print(f"  Vertical FOV: {math.degrees(vertical_fov):.2f}°")
     print(f"  Resolution: {res_x}x{res_y}px")

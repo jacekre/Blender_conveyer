@@ -36,12 +36,43 @@ def setup_animation(config, conveyor):
         # Insert keyframe
         conveyor.keyframe_insert(data_path="location", index=0, frame=frame)
 
+    # Ensure animation data is created
+    if not conveyor.animation_data:
+        conveyor.animation_data_create()
+
     # Set interpolation to constant (step function, no smooth transitions)
-    if conveyor.animation_data and conveyor.animation_data.action:
-        for fcurve in conveyor.animation_data.action.fcurves:
-            if fcurve.data_path == "location" and fcurve.array_index == 0:
-                for keyframe in fcurve.keyframe_points:
-                    keyframe.interpolation = 'CONSTANT'
+    try:
+        if conveyor.animation_data and conveyor.animation_data.action:
+            action = conveyor.animation_data.action
+
+            # Try multiple access methods for Blender 5.0 compatibility
+            fcurves = None
+
+            # Method 1: Standard fcurves attribute
+            if hasattr(action, 'fcurves'):
+                fcurves = action.fcurves
+            # Method 2: Alternative curves attribute (Blender 5.0?)
+            elif hasattr(action, 'curves'):
+                fcurves = action.curves
+            # Method 3: Try accessing through bpy.data.actions
+            elif action.name in bpy.data.actions:
+                stored_action = bpy.data.actions[action.name]
+                if hasattr(stored_action, 'fcurves'):
+                    fcurves = stored_action.fcurves
+
+            if fcurves:
+                for fcurve in fcurves:
+                    if fcurve.data_path == "location" and fcurve.array_index == 0:
+                        for keyframe in fcurve.keyframe_points:
+                            keyframe.interpolation = 'CONSTANT'
+                print(f"  Set interpolation to CONSTANT (step function)")
+            else:
+                print(f"  Warning: Could not access fcurves - animation may be smooth instead of stepped")
+                print(f"  Action type: {type(action)}")
+                print(f"  Available attributes: {dir(action)[:10]}...")  # Show first 10 attributes
+    except Exception as e:
+        print(f"  Warning: Could not set interpolation - {e}")
+        print(f"  Animation will work but may be smooth instead of stepped")
 
     print(f"  Animation frames: {scene.frame_start} to {scene.frame_end}")
     print(f"  Each frame = one step position")

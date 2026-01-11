@@ -10,6 +10,7 @@
     "size": 0.1,
     "min_count": 5,
     "max_count": 15,
+    "z_layer_offset": 0.0001,
     "random_seed": null,
     "random_colors": true
   },
@@ -24,7 +25,8 @@
     "angle_degrees": 45,
     "distance_from_conveyor": 1.0,
     "strength": 100,
-    "size": 2.0
+    "size": 2.0,
+    "use_fill_light": false
   },
   "render": {
     "output_folder": "renders",

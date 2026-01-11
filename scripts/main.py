@@ -101,7 +101,13 @@ def setup_scene(config):
     # Setup lighting
     print("\n6. Setting up lighting...")
     main_light = lighting_setup.setup_lighting(config)
-    fill_light = lighting_setup.add_fill_lights(config)
+
+    # Add fill light only if enabled in config
+    fill_light = None
+    if config['lighting'].get('use_fill_light', False):
+        fill_light = lighting_setup.add_fill_lights(config)
+    else:
+        print("  Fill light disabled (industrial vision simulation mode)")
 
     # Setup animation
     print("\n7. Setting up conveyor animation...")
@@ -111,11 +117,15 @@ def setup_scene(config):
     print("SCENE SETUP COMPLETE")
     print("=" * 60)
 
+    lights = [main_light]
+    if fill_light:
+        lights.append(fill_light)
+
     return {
         'conveyor': conveyor,
         'boxes': boxes,
         'camera': camera,
-        'lights': [main_light, fill_light],
+        'lights': lights,
         'num_steps': num_steps
     }
 
