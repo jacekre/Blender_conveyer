@@ -1,0 +1,34 @@
+# Blender files
+*.blend1
+*.blend2
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Rendered output
+renders/
+*.png
+*.jpg
+*.jpeg
+*.exr
+
+# Blender cache
+__pycache__/
+*.pyc
+.blender_*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+*.egg-info/
+dist/
+build/

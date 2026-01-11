@@ -1,0 +1,36 @@
+{
+  "conveyor": {
+    "length": 2.0,
+    "width": 0.6,
+    "thickness": 0.02,
+    "step_size": 0.02,
+    "material_color": [0.2, 0.2, 0.2, 1.0]
+  },
+  "boxes": {
+    "size": 0.1,
+    "min_count": 5,
+    "max_count": 15,
+    "random_seed": null,
+    "random_colors": true
+  },
+  "camera": {
+    "height": 1.5,
+    "resolution_x": 640,
+    "resolution_y": 480,
+    "look_at_height": 0.05
+  },
+  "lighting": {
+    "type": "area",
+    "angle_degrees": 45,
+    "distance_from_conveyor": 1.0,
+    "strength": 100,
+    "size": 2.0
+  },
+  "render": {
+    "output_folder": "renders",
+    "file_format": "PNG",
+    "engine": "CYCLES",
+    "samples": 64,
+    "use_denoising": true
+  }
+}
