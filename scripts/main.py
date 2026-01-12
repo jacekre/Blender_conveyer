@@ -1,6 +1,6 @@
 """
 Blender Conveyor Belt Simulation
-Main script to setup and render conveyor belt with boxes
+Main script to setup and render conveyor belt with translucent spheres
 
 Usage:
     blender --background --python scripts/main.py
@@ -86,8 +86,8 @@ def setup_scene(config):
     print("\n2. Creating conveyor belt...")
     conveyor = scene_setup.create_conveyor_belt(config)
 
-    # Create boxes on conveyor
-    print("\n3. Creating boxes...")
+    # Create spheres on conveyor
+    print("\n3. Creating translucent spheres...")
     boxes = scene_setup.create_boxes_on_conveyor(config, conveyor)
 
     # Setup camera

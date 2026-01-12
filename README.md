@@ -5,7 +5,7 @@ Production conveyor belt simulation in Blender 5.0 with automatic image renderin
 ## Specification
 
 - **Conveyor Belt**: 2m x 0.6m x 0.02m
-- **Boxes**: 0.1m x 0.1m x 0.1m, randomly placed, different colors
+- **Spheres**: Diameter 0.1m, translucent, randomly placed, different colors
 - **Camera**: Height 1.5m, 640x480px, covers full belt width
 - **Lighting**: Strip light at 45° angle above belt
 - **Movement**: Steps of 0.02m (100 positions across full length)
@@ -17,7 +17,7 @@ Production conveyor belt simulation in Blender 5.0 with automatic image renderin
 Blender_conveyer/
 ├── scripts/
 │   ├── main.py              # Main script launching simulation
-│   ├── scene_setup.py       # Conveyor belt and box creation
+│   ├── scene_setup.py       # Conveyor belt and sphere creation
 │   ├── camera_config.py     # Camera and rendering configuration
 │   ├── lighting_setup.py    # Scene lighting
 │   └── render_manager.py    # Sequence rendering system
@@ -84,20 +84,32 @@ Edit `config/conveyor_config.json` file to adjust parameters:
 }
 ```
 
-### Boxes
+### Spheres
 ```json
 "boxes": {
-  "size": 0.1,              // Cube size (m)
-  "min_count": 5,           // Minimum number of boxes
-  "max_count": 15,          // Maximum number of boxes
-  "z_layer_offset": 0.0001, // Height offset between boxes (m) - prevents artifacts
+  "size": 0.1,              // Sphere diameter (m) - translucent glass-like material
+  "min_count": 5,           // Minimum number of spheres
+  "max_count": 15,          // Maximum number of spheres
+  "z_layer_offset": 0.0001, // Height offset between spheres (m) - prevents artifacts
   "random_seed": null,      // Randomness seed (null = random)
-  "random_colors": true     // Use different colors
+  "random_colors": true,    // Use different colors
+  "density_min": 0.3,       // Minimum material density (0.0-1.0)
+  "density_max": 0.9        // Maximum material density (0.0-1.0)
 }
 ```
 
-**Note about box overlap:** Boxes can overlap randomly. Each subsequent box is placed
-minimally higher (by `z_layer_offset`), so at intersection points newer boxes cover
+**Note about sphere density:** Each sphere gets a random density between `density_min` and `density_max`:
+- **Lower density (0.0-0.4)**: More transparent, water-like (high transmission, lower IOR ~1.33)
+- **Medium density (0.4-0.7)**: Semi-transparent, glass-like (medium transmission, IOR ~1.45)
+- **Higher density (0.7-1.0)**: Less transparent, dense glass (low transmission, higher IOR ~1.58)
+
+The density affects:
+- **Transmission**: Lower density = more light passes through (more transparent)
+- **IOR (Index of Refraction)**: Higher density = stronger light bending
+- **Alpha**: Higher density = more opaque appearance
+
+**Note about sphere overlap:** Spheres can overlap randomly. Each subsequent sphere is placed
+minimally higher (by `z_layer_offset`), so at intersection points newer spheres cover
 older ones. This prevents rendering artifacts ("black holes") when objects overlap.
 
 ### Camera
@@ -163,31 +175,33 @@ Rendered images are saved in `renders/` folder as:
 - ...
 - `frame_0100.png` - last position
 
-Each image is a camera view of the current belt section with boxes.
+Each image is a camera view of the current belt section with translucent spheres.
 
-## How Box Overlap Works
+## How Sphere Overlap Works
 
-The system allows random box overlap, which is more realistic for production
+The system allows random sphere overlap, which is more realistic for production
 conveyor simulation. To prevent rendering artifacts (Z-fighting, "black holes"),
-each subsequent box is placed minimally higher:
+each subsequent sphere is placed minimally higher:
 
-- Box #0: height = base_z
-- Box #1: height = base_z + 0.0001m
-- Box #2: height = base_z + 0.0002m
+- Sphere #0: height = base_z
+- Sphere #1: height = base_z + 0.0001m
+- Sphere #2: height = base_z + 0.0002m
 - etc.
 
-The difference is microscopic (0.1mm), so visually all boxes appear at the same
+The difference is microscopic (0.1mm), so visually all spheres appear at the same
 level, but the rendering engine knows which is "on top" at intersection points.
+The translucent material (95% transmission) allows seeing through overlapping spheres.
 
 **Advantages of this approach:**
 - ✅ No "black holes" when overlapping
 - ✅ More realistic simulation (real objects can overlap too)
-- ✅ All boxes can always be placed (no space constraints)
+- ✅ All spheres can always be placed (no space constraints)
 - ✅ Simpler implementation and faster execution
+- ✅ Translucent material allows visibility through overlaps
 
 ## Customization
 
-### Change number of boxes
+### Change number of spheres
 In `config/conveyor_config.json` set:
 ```json
 "min_count": 10,
@@ -199,16 +213,29 @@ In `config/conveyor_config.json` set:
 "samples": 128,           // More samples = better quality, longer time
 "use_denoising": true
 ```
+**Note:** Translucent materials require more samples for good quality. Recommended minimum: 64 samples.
 
 ### Change rendering engine
 ```json
 "engine": "EEVEE"         // Faster but less photorealistic
 ```
+**Note:** For best translucency effects, use CYCLES engine.
 
-### Repeatable box placement
+### Repeatable sphere placement
 ```json
-"random_seed": 42         // Same number = same box positions
+"random_seed": 42         // Same number = same sphere positions and densities
 ```
+
+### Change sphere density range
+```json
+"density_min": 0.1,       // Very transparent spheres
+"density_max": 0.5        // Semi-transparent spheres
+```
+**Examples:**
+- `0.1 to 0.3`: Very transparent, water-like bubbles
+- `0.3 to 0.6`: Semi-transparent, light glass (default-like)
+- `0.5 to 0.9`: Dense, less transparent glass (default)
+- `0.8 to 1.0`: Nearly opaque, very dense materials
 
 ### Enable fill light (NOT for industrial simulation!)
 ```json
@@ -251,28 +278,30 @@ Then run the script.
 In `camera_config.py:66-68` change `CUDA` to `OPENCL` or `METAL` depending on your graphics card.
 
 ### Rendering takes too long
-- Decrease `samples` in config (e.g. to 32)
-- Use `EEVEE` engine instead of `CYCLES`
+- Decrease `samples` in config (e.g. to 32, but translucency needs more samples)
+- Use `EEVEE` engine instead of `CYCLES` (but translucency won't look as good)
 - Decrease camera resolution
+**Note:** Translucent materials are computationally expensive - expect longer render times.
 
-### Boxes overlap and cause artifacts ("black hole")
-**Problem fixed!** The system uses Z-layering - each subsequent box is placed
-minimally higher, so at overlap points the newer box is visible on top.
+### Spheres overlap and cause artifacts ("black hole")
+**Problem fixed!** The system uses Z-layering - each subsequent sphere is placed
+minimally higher, so at overlap points the newer sphere is visible on top.
+Translucent material allows seeing through overlaps.
 
 If you still see artifacts, increase height offset in `config/conveyor_config.json`:
 ```json
 "z_layer_offset": 0.0002  // Increase if problems persist (default 0.0001m)
 ```
 
-### Too many/too few boxes on belt
+### Too many/too few spheres on belt
 Adjust in configuration:
 ```json
 "min_count": 10,  // Minimum
 "max_count": 20   // Maximum
 ```
 
-### Boxes fall off the belt
-System automatically calculates safe boundaries. If problem occurs, check sizes in configuration.
+### Spheres fall off the belt
+System automatically calculates safe boundaries based on sphere diameter. If problem occurs, check sizes in configuration.
 
 ## Useful Commands
 

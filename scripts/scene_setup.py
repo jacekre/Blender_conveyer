@@ -44,34 +44,56 @@ def create_conveyor_belt(config):
     return conveyor
 
 
-def create_box(position, size, color, index):
-    """Create a single box at specified position"""
-    # Create cube
-    bpy.ops.mesh.primitive_cube_add(location=position)
-    box = bpy.context.active_object
-    box.name = f"Box_{index:03d}"
+def create_sphere(position, diameter, color, density, index):
+    """Create a single translucent sphere at specified position with variable density
 
-    # Scale to box size
-    box.scale = (size / 2, size / 2, size / 2)
-    bpy.ops.object.transform_apply(scale=True)
+    Args:
+        position: (x, y, z) tuple for sphere location
+        diameter: sphere diameter in meters
+        color: RGBA color tuple
+        density: material density (0.0-1.0) - affects translucency
+        index: sphere index for naming
+    """
+    # Create UV sphere (default diameter is 2.0)
+    bpy.ops.mesh.primitive_uv_sphere_add(location=position, radius=diameter/2)
+    sphere = bpy.context.active_object
+    sphere.name = f"Sphere_{index:03d}"
 
-    # Create material with unique color
-    mat = bpy.data.materials.new(name=f"Box_Material_{index:03d}")
+    # Create translucent glass-like material
+    mat = bpy.data.materials.new(name=f"Sphere_Material_{index:03d}")
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
     bsdf = nodes.get('Principled BSDF')
 
+    # Map density to transmission: lower density = higher transmission (more transparent)
+    # density 0.0 -> transmission 1.0 (fully transparent)
+    # density 1.0 -> transmission 0.0 (opaque)
+    transmission = 1.0 - density
+
+    # Adjust IOR based on density (denser materials often have higher IOR)
+    ior = 1.33 + (density * 0.25)  # Range: 1.33 (water-like) to 1.58 (dense glass)
+
+    # Translucent colored glass material with density-based properties
     bsdf.inputs['Base Color'].default_value = color
-    bsdf.inputs['Roughness'].default_value = 0.4
-    bsdf.inputs['Metallic'].default_value = 0.1
+    bsdf.inputs['Transmission'].default_value = transmission
+    bsdf.inputs['Roughness'].default_value = 0.05      # Smooth surface
+    bsdf.inputs['IOR'].default_value = ior
+    bsdf.inputs['Alpha'].default_value = max(0.5, 1.0 - density * 0.5)  # Denser = more opaque
 
-    box.data.materials.append(mat)
+    # Enable blend mode for transparency
+    mat.blend_method = 'BLEND'
+    mat.shadow_method = 'HASHED'
 
-    return box
+    sphere.data.materials.append(mat)
+
+    # Store density as custom property for reference
+    sphere["density"] = density
+
+    return sphere
 
 
 def generate_random_color():
-    """Generate a random bright color for box identification"""
+    """Generate a random bright color for sphere identification"""
     # Generate saturated colors for better visibility
     hue = random.random()
     saturation = random.uniform(0.6, 1.0)
@@ -85,47 +107,52 @@ def generate_random_color():
 
 
 def create_boxes_on_conveyor(config, conveyor):
-    """Create randomly positioned boxes on the conveyor belt
+    """Create randomly positioned translucent spheres on the conveyor belt
 
-    Boxes can overlap - later boxes will appear on top of earlier ones
+    Spheres can overlap - later spheres will appear on top of earlier ones
     to prevent rendering artifacts (black holes)
     """
     conv_config = config['conveyor']
-    box_config = config['boxes']
+    box_config = config['boxes']  # Keep variable name for config compatibility
 
     length = conv_config['length']
     width = conv_config['width']
     thickness = conv_config['thickness']
-    box_size = box_config['size']
+    sphere_diameter = box_config['size']  # Now interpreted as sphere diameter (0.1m)
 
     # Set random seed if specified
     if box_config['random_seed'] is not None:
         random.seed(box_config['random_seed'])
 
-    # Generate random number of boxes
-    num_boxes = random.randint(box_config['min_count'], box_config['max_count'])
+    # Generate random number of spheres
+    num_spheres = random.randint(box_config['min_count'], box_config['max_count'])
 
-    boxes = []
+    spheres = []
 
     # Calculate safe placement boundaries
-    # Boxes should be fully on the belt
-    x_min = -length / 2 + box_size / 2
-    x_max = length / 2 - box_size / 2
-    y_min = -width / 2 + box_size / 2
-    y_max = width / 2 - box_size / 2
-    base_z_position = thickness / 2 + box_size / 2  # On top of conveyor
+    # Spheres should be fully on the belt
+    sphere_radius = sphere_diameter / 2
+    x_min = -length / 2 + sphere_radius
+    x_max = length / 2 - sphere_radius
+    y_min = -width / 2 + sphere_radius
+    y_max = width / 2 - sphere_radius
+    base_z_position = thickness / 2 + sphere_radius  # On top of conveyor
 
-    # Z-offset for each box - later boxes slightly higher
-    # This ensures that overlapping boxes render correctly
-    z_offset_per_box = box_config.get('z_layer_offset', 0.0001)  # 0.1mm per box
+    # Z-offset for each sphere - later spheres slightly higher
+    # This ensures that overlapping spheres render correctly
+    z_offset_per_sphere = box_config.get('z_layer_offset', 0.0001)  # 0.1mm per sphere
 
-    for i in range(num_boxes):
+    # Get density range from config
+    density_min = box_config.get('density_min', 0.3)
+    density_max = box_config.get('density_max', 0.9)
+
+    for i in range(num_spheres):
         # Random position on conveyor
         x = random.uniform(x_min, x_max)
         y = random.uniform(y_min, y_max)
 
-        # Each subsequent box is slightly higher to prevent Z-fighting
-        z_position = base_z_position + (i * z_offset_per_box)
+        # Each subsequent sphere is slightly higher to prevent Z-fighting
+        z_position = base_z_position + (i * z_offset_per_sphere)
         position = (x, y, z_position)
 
         # Generate color
@@ -134,16 +161,20 @@ def create_boxes_on_conveyor(config, conveyor):
         else:
             color = (0.8, 0.2, 0.2, 1.0)  # Default red
 
-        box = create_box(position, box_size, color, i)
-        boxes.append(box)
+        # Generate random density for this sphere
+        density = random.uniform(density_min, density_max)
 
-        # Parent box to conveyor so they move together
-        box.parent = conveyor
+        sphere = create_sphere(position, sphere_diameter, color, density, i)
+        spheres.append(sphere)
 
-    print(f"Created {num_boxes} boxes on conveyor")
-    print(f"  Boxes can overlap - later boxes appear on top")
+        # Parent sphere to conveyor so they move together
+        sphere.parent = conveyor
 
-    return boxes
+    print(f"Created {num_spheres} translucent spheres on conveyor")
+    print(f"  Density range: {density_min:.2f} to {density_max:.2f}")
+    print(f"  Spheres can overlap - later spheres appear on top")
+
+    return spheres
 
 
 def setup_world_background():
