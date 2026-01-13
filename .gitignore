@@ -17,6 +17,7 @@ __pycache__/
 *.pyc
 .blender_*
 
+
 # OS files
 .DS_Store
 Thumbs.db
