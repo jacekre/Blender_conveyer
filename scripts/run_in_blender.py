@@ -22,15 +22,15 @@ print(f"Scripts directory: {scripts_dir}")
 
 # Now import and run main
 try:
-    # Import fresh (reload if already imported)
-    if 'main' in sys.modules:
-        import importlib
-        importlib.reload(sys.modules['scene_setup'])
-        importlib.reload(sys.modules['camera_config'])
-        importlib.reload(sys.modules['lighting_setup'])
-        importlib.reload(sys.modules['render_manager'])
-        importlib.reload(sys.modules['main'])
+    # Force reload - clear all cached modules first
+    print("\nClearing cached modules...")
+    modules_to_clear = ['scene_setup', 'camera_config', 'lighting_setup', 'render_manager', 'main']
+    for mod_name in modules_to_clear:
+        if mod_name in sys.modules:
+            del sys.modules[mod_name]
+            print(f"  Cleared {mod_name} from cache")
 
+    print("Importing fresh modules...\n")
     import main
 
     # Run with options
